@@ -1,0 +1,8 @@
+# Set path to certificates directory
+csr_path: "{{ playbook_dir }}/certs"
+
+# Set list of certificates (csr)
+csr: []
+# - common_name: example.com
+#   subject_alt_name:
+#   - DNS:blog.example.com

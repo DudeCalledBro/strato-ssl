@@ -1,0 +1,39 @@
+- hosts: localhost
+  connection: local
+  pre_tasks:
+  - name: Include certificate variables
+    ansible.builtin.include_vars: config.yml
+
+  tasks:
+  - name: Create certificate directory
+    ansible.builtin.file:
+      path: "{{ csr_path }}/{{ item.common_name }}"
+      state: directory
+    loop: "{{ csr }}"
+    loop_control:
+      label: "{{ item.common_name }}"
+
+  - name: Generate an OpenSSL private key
+    community.crypto.openssl_privatekey:
+      path: "{{ csr_path }}/{{ item.common_name }}/{{ item.common_name }}.pem"
+      passphrase: "{{ item.passphrase | default(omit, true) }}"
+      # Aktuell wird lediglich ein Schlüssel vom Typ RSA mit einer Länge von 2048 bit unterstützt
+      type: RSA
+      size: 2048
+    loop: "{{ csr }}"
+    loop_control:
+      label: "{{ item.common_name }}"
+
+  - name: Generate an OpenSSL CSR
+    community.crypto.openssl_csr:
+      path: "{{ csr_path }}/{{ item.common_name }}/{{ item.common_name }}.csr"
+      common_name: "{{ item.common_name }}"
+      country_name: "{{ item.country_name | default(omit, true) }}"
+      email_address: "{{ item.email_address | default(omit, true) }}"
+      organization_name: "{{ item.organization_name | default(omit, true) }}"
+      privatekey_passphrase: "{{ item.passphrase | default(omit) }}"
+      privatekey_path: "{{ csr_path }}/{{ item.common_name }}/{{ item.common_name }}.pem"
+      subject_alt_name: "{{ item.subject_alt_name | default(omit, true) }}"
+    loop: "{{ csr }}"
+    loop_control:
+      label: "{{ item.common_name }}"
